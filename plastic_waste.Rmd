@@ -1,0 +1,151 @@
+---
+title: "R4DS #TidyTuesday: Global Plastic Waste 21/05/2019 "
+output: html_notebook
+---
+Plastic pollution is a major and growing problem, negatively affecting oceans and wildlife health. Our World in Data has a lot of great data at the various levels including globally, per country, and over time.
+
+Additionally, National Geographic is running a dataviz communication contest on plastic waste as seen here.
+
+I intentionally left the datasets "uncleaned" this week as they are already in good shape minus the column names. I would suggest trying the janitor package, where janitor::clean_names() or purrr::set_names() can come in handy to clean up the names quickly!
+
+#Import data
+```{r}
+coast_vs_waste <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-05-21/coastal-population-vs-mismanaged-plastic.csv")
+
+mismanaged_vs_gdp <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-05-21/per-capita-mismanaged-plastic-waste-vs-gdp-per-capita.csv")
+
+waste_vs_gdp <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-05-21/per-capita-plastic-waste-vs-gdp-per-capita.csv")
+```
+
+Filter to 2010.
+```{r}
+coast_vs_waste<- coast_vs_waste %>%
+  filter(Year==2010)
+
+mismanaged_vs_gdp<- mismanaged_vs_gdp %>%
+  filter(Year==2010)
+
+waste_vs_gdp<- waste_vs_gdp %>%
+  filter(Year==2010)
+```
+
+Rename variables using janitor
+```{r}
+library(janitor)
+coast_vs_waste<- coast_vs_waste %>% clean_names() 
+mismanaged_vs_gdp<- mismanaged_vs_gdp %>% clean_names()
+```
+
+Remove missing mismanaged_plastic vars and population from coast data
+```{r}
+coast_vs_waste<- coast_vs_waste %>%
+  filter(!is.na(coast_vs_waste$mismanaged_plastic_waste_tonnes))
+
+coast_vs_waste<- coast_vs_waste %>%
+  filter(!is.na(coast_vs_waste$total_population_gapminder))
+```
+
+Plot this
+```{r}
+library(ggplot2)
+# p1<- coast_vs_waste %>%
+#   select(entity, total_population_gapminder, mismanaged_plastic_waste_tonnes)
+# 
+# p2<- ggplot(p1, aes(x=total_population_gapminder, y=mismanaged_plastic_waste_tonnes, group=entity)) +
+#   geom_point() +
+#   scale_x_log10()
+#   
+# 
+# p2
+```
+Look at the mismanaged vs gdp file
+
+```{r}
+mismanaged_vs_gdp<- mismanaged_vs_gdp %>%
+  filter(!is.na(mismanaged_vs_gdp$per_capita_mismanaged_plastic_waste_kilograms_per_person_per_day))
+
+mismanaged_vs_gdp<- mismanaged_vs_gdp %>%
+  filter(!is.na(mismanaged_vs_gdp$total_population_gapminder))
+
+mismanaged_vs_gdp<-mismanaged_vs_gdp[order(-mismanaged_vs_gdp$per_capita_mismanaged_plastic_waste_kilograms_per_person_per_day),]#Sort by descending per capita mismanaged plastic waste, kilos per day
+```
+
+Subset to the top 20
+```{r}
+
+mismanaged_top20_1 <- mismanaged_vs_gdp %>%
+  select(entity, per_capita_mismanaged_plastic_waste_kilograms_per_person_per_day)%>%
+  arrange(desc(per_capita_mismanaged_plastic_waste_kilograms_per_person_per_day)) %>%
+  top_n(20) %>%
+  arrange(per_capita_mismanaged_plastic_waste_kilograms_per_person_per_day) %>%
+  mutate(entity=factor(entity,  levels=.$entity))
+
+```
+Product a dotplot
+```{r}
+#Diverging dot plot
+diverging_dotplot<- ggplot(mismanaged_top20_1, aes(x=entity, y=per_capita_mismanaged_plastic_waste_kilograms_per_person_per_day,                                                 label=" ")) +
+  geom_point(stat='identity', size=6) +
+  scale_colour_manual(name="Waste",
+                      labels=("Waste")) +
+  geom_text(colour="white", size=2) +
+  labs(title="2010 Mismanaged Plastic Waste",
+      subtitle="Kilograms per person per day", 
+      y="Kilograms per person per day",
+      x="Country") +
+  coord_flip() +
+  theme(axis.line=element_line(colour="Black", size=1, linetype = "solid"),
+        panel.background = element_rect(fill="azure2", colour="azure2",size=0.5, linetype="solid"),
+        plot.background = element_rect((fill="azure2")),
+                  panel.grid.major.x=element_blank(),
+                  panel.grid.minor.x = element_blank(),
+                  panel.grid.major.y=element_line(size=1),
+        plot.title = element_text(hjust=0.5, face="bold"),
+        plot.subtitle = element_text(hjust=0.5),
+        axis.text.x=element_text(face="bold"),
+        axis.text.y = element_text(face="bold"))
+
+diverging_dotplot
+
+```
+
+
+Visualise this. Not best to use geom_point() as there will be too many data labels and doesn't show much
+of a story.
+
+```{r}
+#What is the mean of the waste?
+summary(mismanaged_vs_gdp)
+```
+
+
+Look at the coastal proportions vs waste
+```{r}
+coastal<- coast_vs_waste %>%
+  mutate(prop= (coastal_population / total_population_gapminder)*100,
+         mismanaged_plastic_waste_tonnes=mismanaged_plastic_waste_tonnes/100000) %>%
+  select(entity, mismanaged_plastic_waste_tonnes, prop, total_population_gapminder) 
+
+coastal_plot <- ggplot(coastal, aes(x=prop, y=log(mismanaged_plastic_waste_tonnes), label=entity)) +
+  geom_point(aes(colour=total_population_gapminder)) +
+  geom_text(aes(label=ifelse(total_population_gapminder>1000000000, as.character(entity),'')),hjust=0,vjust=0) +
+  labs(title = "Mismanaged Plastic Waste by Coastal Proportion",
+       x="Coastal Proportion",
+       y="Mismanaged plastic waste (tonnes) [Log scale]")+
+  theme(plot.title = element_text(hjust=0.5, face="bold"),
+        legend.position = "none",
+        axis.line=element_line(colour="Black", size=1, linetype = "solid"),
+        panel.background = element_rect(fill="azure2", colour="azure2",size=0.5, linetype="solid"),
+        plot.background = element_rect((fill="azure2")),
+        panel.grid.major.x=element_blank(),
+        panel.grid.minor.x = element_blank(),
+        panel.grid.major.y=element_line(size=1)) +
+  geom_smooth(method="lm", colour="red", size=1)
+
+coastal_plot
+  
+```
+Some data is incorrect as some coastal proportions are over 100%.
+Labelled points show the top two countries with the highest total populations.
+Here we can see that India and China have the highest total proportions, and that ~<25% of the coastal proportions
+have amongst the highest amount of waste.

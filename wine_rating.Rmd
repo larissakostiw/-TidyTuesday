@@ -1,0 +1,109 @@
+---
+title: "R4DS #TidyTuesday: Wine Ratings 28/05/19"
+output: html_notebook
+---
+
+An article with some interesting graphs (different dataset) can be found here. They found some clear relationships, but it also appears that cost is factored into their rating system. How does the Wine Enthusiast ratings scale compare?
+
+
+#Import Data
+```{r}
+wine_ratings <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-05-28/winemag-data-130k-v2.csv")
+```
+
+
+Check for any duplicates.
+X1 are obs, so check for dups based on all other obs.
+```{r}
+wine_ratings2<- wine_ratings[,2:ncol(wine_ratings)]
+wine_ratings2<-distinct(wine_ratings2) #This has removed almost 10k rows.
+```
+
+
+
+
+Top reviewed countries
+```{r}
+popular_countries<- select(wine_ratings2, country) %>%
+  group_by(country) %>%
+  tally() %>%
+  arrange(desc(n)) %>%
+  slice(1:10)
+
+```
+
+
+```{r}
+histogram_points<- select (wine_ratings2, country, points)
+#Join on the top 10 countries so subset to just these ones
+histogram_points_join<- histogram_points %>%
+  left_join(popular_countries, by=c("country"="country"))
+#Remove missing entries
+histogram_points_join<- na.omit(histogram_points_join)
+
+```
+
+```{r}
+library(ggplot2)
+library(ggridges)
+histogram_points2<- ggplot(histogram_points_join,
+  aes(x = points, y = country)) +
+  geom_density_ridges(aes(fill = country, colour = country), 
+                      alpha = 0.3,
+                      show.legend = FALSE,
+                      size=1) +
+  geom_text(aes(label = country), x = 80, nudge_y = 0.5,
+            size = 3, hjust = 0) +
+    scale_x_continuous(limits = c(80, 100)) +
+  labs(x = "Ratings", 
+       y= "Country",
+       title = "Wine Ratings of top 10 rated countries") +
+  theme(plot.title=element_text(hjust=0.5, face="bold"),
+        panel.background = element_rect(fill="wheat", colour="wheat",size=0.5, linetype="solid"),
+        plot.background = element_rect((fill="wheat")),
+        panel.grid.major.x=element_blank(),
+        panel.grid.minor.x = element_blank(),
+        panel.grid.major.y=element_line(size=1),
+        axis.text.y=element_blank() #Remove y axis labels
+  )
+
+histogram_points2
+```
+
+
+--------------------------------------------------------------------
+Looking at bubble plot of pinot grigio by rating and price and country
+
+```{r}
+# pinot_grigio<- select(wine_ratings, country, points, price, variety) %>% #Select vars
+#   filter(variety %in% "Pinot Grigio") %>% #Filter to Pinot Grigio
+#   select(-variety) %>%#Drop variety 
+#   group_by(country, points, price) %>%
+#   tally()
+# 
+# #Only look at the top 5 countries for pinot grigio
+# popular_pinot_grigio<- select(wine_ratings, country, variety) %>%
+#   filter(variety %in% "Pinot Grigio") %>%
+#   group_by(country) %>%
+#   tally() %>%
+#   arrange(desc(n)) %>%
+#   slice(1:5)
+# #Subset the pinot_grigio table to just the top 5 rated ones by country
+# pinot_grigio_join<- pinot_grigio %>%
+#   left_join(popular_pinot_grigio, by=c("country"="country"))
+# 
+# 
+# #Bubble plot
+# bubble_pinot<-ggplot(pinot_grigio_join, aes(x=points, y=price)) +
+#   geom_point(aes(size=n.x))
+# 
+# bubble_pinot
+
+```
+
+
+```{r}
+# ggplot(histogram_points_join, aes(x = points, y = country, group = country)) + 
+#   geom_density_ridges()
+```
+

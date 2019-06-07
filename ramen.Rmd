@@ -66,11 +66,11 @@ boxplot_ratings<- ramen_rating_dist_10 %>%
   geom_boxplot(fill="gold1 ", alpha=0.8, colour="gold1") +
   coord_flip() +
   geom_point(aes(size=rating_count),
-             colour="violetred1")+
+             colour="firebrick1")+
   labs(title="Distribution of Ramen ratings",
        subtitle="Top 10 most rated countries",
-       x="Stars (0-5)",
-       y="Country") +
+       x="Country",
+       y="Stars (0-5)") +
   theme(
     plot.background = element_rect((fill="#0b012d")),
                    panel.grid.major.x=element_blank(),

@@ -1,0 +1,105 @@
+---
+title: "Ramen Ratings"
+output: html_notebook
+---
+Load the data
+```{r}
+ramen_ratings <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-06-04/ramen_ratings.csv")
+
+```
+Explore the data: Summary
+```{r}
+summary(ramen_ratings)
+```
+
+Which Country has the most ratings?
+```{r}
+library(tidyverse)
+
+country_ratings<- ramen_ratings %>%
+  group_by(country) %>%
+  summarise(total_ratings=n()) %>%
+  select(country, total_ratings)
+
+country_ratings<- country_ratings[order(-country_ratings$total_ratings),]#Sort by descendign ratings
+
+#Subset to the top 10
+country_ratings<- country_ratings %>%
+  slice(1:10)
+```
+
+Which country has the most 5/5 ratings?
+```{r}
+country_5star<- ramen_ratings %>%
+  group_by(country) %>%
+  filter(stars==5) %>%
+  summarise(total_ratings=n()) %>%
+  select(country, total_ratings)
+
+country_5star<- country_5star[order(-country_5star$total_ratings),]#Sort by descendign ratings
+
+```
+
+
+Look at the distribution of ratings amongst the most rated countries
+```{r}
+ramen_rating_dist_10<- ramen_ratings %>%
+  left_join(select(country_ratings, country, total_ratings), by=c("country"="country")) %>%
+  drop_na() #removing any rows where there is an NA
+
+
+
+```
+
+Sort data for boxplot
+```{r}
+library(ggplot2)
+ramen_rating_dist_10 <- ramen_rating_dist_10 %>%
+  group_by(country, stars) %>%
+  summarise(rating_count=n()) %>%
+  select(country, stars, rating_count)
+```
+Plot boxplot
+```{r}
+boxplot_ratings<- ramen_rating_dist_10 %>%
+  ggplot(aes(x=fct_reorder(country, stars), y=stars ))+
+  geom_boxplot(fill="gold1 ", alpha=0.8, colour="gold1") +
+  coord_flip() +
+  geom_point(aes(size=rating_count),
+             colour="violetred1")+
+  labs(title="Distribution of Ramen ratings",
+       subtitle="Top 10 most rated countries",
+       x="Stars (0-5)",
+       y="Country") +
+  theme(
+    plot.background = element_rect((fill="#0b012d")),
+                   panel.grid.major.x=element_blank(),
+                   panel.grid.minor.x = element_blank(),
+                   panel.grid.major.y=element_blank(),
+                   panel.grid.minor.y = element_blank(),
+         plot.title = element_text(hjust=0.5, face="bold", colour="yellow"),
+         plot.subtitle = element_text(hjust=0.5, colour="yellow"),
+    panel.background = element_rect(fill="#0b012d"),
+    axis.text.x=element_text(face="bold", colour="yellow"),
+    axis.text.y = element_text( colour="yellow"),
+    axis.title.x=element_text(face="bold",colour="yellow"),
+    axis.title.y=element_text(face="bold", colour="yellow"),
+    legend.position="none"
+    
+    )
+
+  
+  
+  # theme(theme(axis.line=element_line(colour="yellow", size=1, linetype = "solid"),
+  #       panel.background = element_rect(fill="darkorchid4", colour="darkorchid4",size=0.5, linetype="solid"),
+  #       plot.background = element_rect((fill="darkorchid4")),
+  #                 panel.grid.major.x=element_blank(),
+  #                # panel.grid.minor.x = element_blank(),
+  #                 panel.grid.major.y=element_line(size=1),
+  #       plot.title = element_text(hjust=0.5, face="bold"),
+  #       plot.subtitle = element_text(hjust=0.5),
+  #       axis.text.x=element_text(face="bold"),
+  #       axis.text.y = element_text(face="bold")))
+
+boxplot_ratings
+```

@@ -1,0 +1,92 @@
+---
+title: "Tidy Tuesday: Christmas  Bird Counts"
+output: html_notebook
+---
+  
+
+```{r}
+library(tidyverse)
+#install.packages("ggimage")
+library(ggimage)
+bird_counts <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-06-18/bird_counts.csv")
+
+image<- "european_starling.png"
+image<- "bird2.png"
+
+```
+
+
+```{r}
+summary(bird_counts)
+```
+
+```{r}
+top_by_year<- bird_counts %>%
+  group_by(how_many_counted) %>%
+  select(year, species, how_many_counted) %>%
+  arrange(-how_many_counted)
+
+#European Starling seems to be the most popular CHristmas bird.
+european_starling<- bird_counts %>%
+  filter(species=="European Starling") %>%
+  select(year, how_many_counted) %>%
+  drop_na() %>%
+  mutate(year_group=ifelse(year<1930, 1920,
+                           ifelse(year<1940, 1930,
+                                  ifelse(year<1950, 1940,
+                                         ifelse(year<1960, 1950,
+                                                ifelse(year<1970, 1960,
+                                                       ifelse(year<1980, 1970,
+                                                              ifelse(year<1990, 1980,
+                                                                     ifelse(year<2000, 1990,
+                                                                            ifelse(year<2010, 2000,
+                                                                                   ifelse(year<2020, 2010))))))))))) %>%
+  select(-year) %>%
+  group_by(year_group) %>%
+  summarise(total_counted=sum(how_many_counted))#Group the year into 10's
+
+#install.packages("scales")
+#library(scales)
+#options(scipen=999)
+#Plot
+library(ggimage)
+library(gganimate)
+library(tidyverse)
+european_starling$year_group<- as.factor(european_starling$year_group)
+
+plot<- european_starling %>%
+  ggplot(aes(x=year_group,
+             y=total_counted)) +
+  #geom_line(linetype="dashed", group=1)+
+  geom_point() +
+  labs(title="European Starling Bird Sightings",
+       subtitle="Total number of counted sightings per decade",
+       x="Decade",
+       y="Total Count") +
+  theme(plot.title=element_text(hjust=0, face='bold', colour="grey22"),
+        plot.subtitle = element_text(hjust=0, face='bold', colour="grey22"),
+        panel.background = element_rect(fill="lightblue1"),
+        plot.background = element_rect(fill="lightblue1"),
+        panel.grid.major=element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank(),
+        axis.line.x=element_line(colour="grey22", size=1),
+        axis.line.y=element_line(colour="grey22", size=1),
+        axis.text.x=element_text(face="italic", colour="grey22"),
+        axis.title = element_text(face="bold")) +
+  geom_image(aes(image=image), size=0.15) +
+  #transition_reveal(year_group, keep_last = TRUE)
+  transition_states(year_group, transition_length=1, state_length=2)+
+  shadow_mark() +
+  enter_fade() +
+  exit_shrink() +
+  ease_aes('sine-in-out')
+
+plot
+
+
+anim_save("birds.gif")
+```
+
+
+

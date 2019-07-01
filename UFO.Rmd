@@ -1,0 +1,58 @@
+---
+title: "UFO Sightings"
+output: html_notebook
+---
+
+
+
+```{r}
+ufo_sightings <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-06-25/ufo_sightings.csv")
+
+library(tidyverse)
+```
+
+
+```{r}
+summary(ufo_sightings)
+```
+
+Sightings per coord pair
+```{r}
+#Count sightings per longitude/latitude points
+sightings<- ufo_sightings %>%
+  group_by(longitude, latitude) %>%
+  summarise(count=n()) %>%
+  select(longitude, latitude, count) %>%
+  arrange(count)
+```
+
+```{r}
+library(maps)
+
+world<- map_data("world")
+
+map <- ggplot() +
+  geom_polygon(data=world, aes(x=long, y=lat, group=group), fill="grey", alpha=0.9)+
+ # geom_text(aes(label=country), data=ufo_sightings, size=3, hjust=0.5)+
+  geom_point(data=sightings, aes(x=longitude, y=latitude, alpha=count, size=count, colour=count), alpha=0.5) +
+  theme_void()  +
+  labs(
+    title = "UFO Sightings",
+    subtitle = "1949 - 2013",
+    caption = "Source: Our World in Data"
+  ) + 
+  theme(legend.position = "none",
+        plot.title = element_text(hjust=0.5, face='bold', colour="black"),
+        plot.subtitle = element_text(hjust=0.5, face='bold', colour="black"),
+        axis.ticks.x=element_blank(),
+        panel.background = element_rect(fill="gray97"),
+        plot.background = element_rect(fill="gray97")
+  ) +
+  scale_color_viridis_c(option="inferno")
+
+map
+
+ggsave("ufo_map.png")
+```
+
+

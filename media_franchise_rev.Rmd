@@ -1,0 +1,73 @@
+---
+title: "Media Franchise Revenues"
+output: html_notebook
+---
+
+```{r}
+media_franchises <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-07-02/media_franchises.csv")
+```
+
+Summary
+```{r}
+summary(media_franchises)
+```
+
+Group the years
+```{r}
+library(tidyverse)
+
+media_franchises<- media_franchises %>%
+  mutate(year_group=ifelse(year_created<1935, "1924-1934",
+                           ifelse(year_created<1945, "1935-1944",
+                                  ifelse(year_created<1955, "1945-1954",
+                                         ifelse(year_created<1965, "1955-1964",
+                                                ifelse(year_created<1975, "1965-1974",
+                                                       ifelse(year_created<1985, "1975-1984",
+                                                               ifelse(year_created<1995, "1985-1994",
+                                                                      ifelse(year_created<2005, "1995-2004", "2005-2013")))))))))
+
+revenue_yeargroup<- media_franchises %>%
+  group_by(year_group, revenue_category) %>%
+  summarise(total_revenue=sum(revenue)) %>%
+  select(year_group, revenue_category, total_revenue) %>%
+  arrange(year_group)
+
+revenue_yeargroup$year_group<- as.factor(revenue_yeargroup$year_group)
+```
+Plot a stacked bar chart. 
+```{r}
+#install.packages("ggthemes")
+#library(ggthemes)
+
+p<- ggplot(revenue_yeargroup, aes(x=year_group, y=total_revenue))+
+  geom_col(aes(fill=revenue_category), width=0.5) +
+  scale_fill_brewer(palette="Set2")+
+  theme_solarized()+
+  scale_colour_solarized('blue')+
+  scale_x_discrete(limits=unique(rev(revenue_yeargroup$year_group)))+
+  labs(
+    title = "Media Franchise Revenues ",
+    subtitle = "By Category in 1924-2013",
+    caption = "Source: Wikipedia. Plot by Larissa Kostiw",
+    y="Revenue(billions)",
+    x="Year Group",
+    fill="Revenue Category"
+  ) +
+  coord_flip() +
+  theme(plot.margin = unit(c(20,20,20,20),"points"),
+        plot.title=element_text(hjust=0.5, face="bold"),
+        plot.subtitle = element_text(hjust=0.5, face="bold"),
+        legend.position = "bottom",
+        legend.box="horizontal",
+        legend.text = element_text(size=10, face="bold"),
+        panel.grid.major.y = element_blank(),
+        panel.grid.minor.y = element_blank(),
+        axis.title.x=element_text(face="bold"),
+        axis.title.y=element_text(face="bold"))
+      
+
+p
+
+#ggsave("media_franchise_rev.png")
+```
+

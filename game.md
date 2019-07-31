@@ -231,17 +231,17 @@ density<-
   geom_density_ridges_gradient(scale = 3, rel_min_height = 0.01, gradient_lwd = 1.) +
   scale_x_continuous(limits=c(20, 100), expand = c(0.01, 0)) +
   scale_y_discrete(expand = c(0.01, 0)) +
-  labs(title = "Are games getting better by year?",
+  labs(title = "Metascores over the years",
        x="Metascore", 
        y = "Year",
        caption = "Source: Steam Spy. Plot: @LarissaKostiw")+
-  theme(panel.background = element_rect(fill = "#1D2024"),
-        plot.background = element_rect(fill = "#1D2024"),
-        legend.background = element_rect(fill = "#1D2024"),
+  theme(panel.background = element_rect(fill = "#000000"),
+        plot.background = element_rect(fill = "#000000"),
+        legend.background = element_rect(fill = "#000000"),
         text = element_text(colour = "white"),
         axis.text = element_text(colour = "white"),
         panel.grid = element_blank(),
-        strip.background = element_rect(fill = "#1D2024"),
+        strip.background = element_rect(fill = "#000000"),
         strip.text = element_text(colour = "white"),
         axis.title.x =  element_text(hjust=0.5),
         axis.title.y =  element_text(hjust=0.5),
